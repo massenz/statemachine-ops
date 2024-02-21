@@ -1,0 +1,75 @@
+# Created by M. Massenzio, 2024
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fsm-cluster
+  labels:
+    app.kubernetes.io/name: fsm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fsm
+  template:
+    metadata:
+      labels:
+        app: fsm
+    spec:
+      containers:
+      - name: statemachine
+        image: massenz/statemachine:{{ .Values.fsm.version }}
+        imagePullPolicy: Always
+        
+        # TODO: Move all these configurations to a ConfigMap
+        env:
+          - name: AWS_ENDPOINT
+            value: "http://awslocal:4566"
+          - name: AWS_REGION
+            value: us-west-2
+          - name: AWS_PROFILE
+            value: sm-bot
+          - name: TIMEOUT
+            value: 200ms
+          - name: DEBUG
+            value: -debug
+          - name: EVENTS_Q
+            value: "events"
+          - name: NOTIFICATIONS_Q
+            value: "notifications"
+          - name: INSECURE
+            value: -insecure
+          - name: GRPC_PORT
+            value: "7398"
+          - name: REDIS
+            value: redis:6379
+        ports:
+          - containerPort: 7398
+            name: grpc-port
+        volumeMounts:
+          - name: aws-creds
+            mountPath: "/home/sm-bot/.aws"
+            readOnly: true
+            
+      volumes:
+        - name: aws-creds
+          configMap: 
+            name: aws-creds
+            items:
+              - key: credentials
+                path: credentials
+        
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fsm
+spec:
+  selector:
+    app.kubernetes.io/name: fsm
+  ports:
+    - name: grpc
+      protocol: TCP
+      port: {{ .Values.fsm.grpcPort }}
+      targetPort: grpc-port
+      

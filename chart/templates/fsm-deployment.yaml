@@ -7,7 +7,7 @@ metadata:
   labels:
     app.kubernetes.io/name: fsm
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: fsm
@@ -31,18 +31,22 @@ spec:
             value: sm-bot
           - name: TIMEOUT
             value: 200ms
+          {{- if .Values.fsm.debug }}
           - name: DEBUG
             value: -debug
+          {{- end }}
           - name: EVENTS_Q
-            value: "events"
+            value: {{ .Values.fsm.queue.events }}
           - name: NOTIFICATIONS_Q
-            value: "notifications"
+            value: {{ .Values.fsm.queue.notifications }}
+          {{- if .Values.fsm.ttl.disable }}
           - name: INSECURE
             value: -insecure
+          {{- end }}
           - name: GRPC_PORT
-            value: "7398"
+            value: {{ .Values.fsm.grpcPort | default "7398" | quote }}
           - name: REDIS
-            value: redis:6379
+            value: {{ .Values.redis.host }}:{{ .Values.redis.port | default 6379 }}
         ports:
           - containerPort: 7398
             name: grpc-port

@@ -24,7 +24,7 @@ spec:
         # TODO: Move all these configurations to a ConfigMap
         env:
           - name: AWS_ENDPOINT
-            value: "http://awslocal:4566"
+            value: "http://awslocal.infra"
           - name: AWS_REGION
             value: us-west-2
           - name: AWS_PROFILE
